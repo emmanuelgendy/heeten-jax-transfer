@@ -20,11 +20,12 @@ class JAXComplexHemsEnv(eqx.Module):
     num_actions: int
     action_batt_kw: jnp.ndarray
     action_hvac_kw: jnp.ndarray
+    allowed_actions_mask: jnp.ndarray  # <-- Restored AACL Mask Variable!
 
     def __init__(self, data_path: str = "data/processed/heeten_complex_hems_data.npz"):
         self.config = ComplexHemsConfig()
         
-        print(f"Loading Heeten Tensors from {data_path}...")
+        # print(f"Loading Heeten Tensors from {data_path}...")
         data = np.load(data_path)
         self.pv_data = jnp.array(data['pv_data'])
         self.load_data = jnp.array(data['load_data'])
@@ -32,7 +33,7 @@ class JAXComplexHemsEnv(eqx.Module):
         self.import_price_data = jnp.array(data['import_price_data'])
         self.export_price_data = jnp.array(data['export_price_data'])
         
-        # Build the 9-Discrete Action Grid (Matches your PyTorch logic)
+        # Build the 9-Discrete Action Grid
         batt_actions = [self.config.max_batt_discharge_kw, 0.0, self.config.max_batt_charge_kw]
         hvac_actions = [self.config.hvac_max_cool_power, 0.0, self.config.hvac_max_heat_power]
         
@@ -40,6 +41,17 @@ class JAXComplexHemsEnv(eqx.Module):
         self.action_batt_kw = batt_grid.flatten()
         self.action_hvac_kw = hvac_grid.flatten()
         self.num_actions = len(self.action_batt_kw)
+        
+        # Default: all actions allowed (AACL will modify this mask)
+        self.allowed_actions_mask = jnp.ones(self.num_actions, dtype=jnp.bool_)
+
+    # <-- Restored AACL Topology Function! -->
+    def set_hardware_topology(self, allowed_indices: list):
+        """AACL Logic: Masks out unavailable physical actuators."""
+        mask = jnp.zeros(self.num_actions, dtype=jnp.bool_)
+        mask = mask.at[jnp.array(allowed_indices)].set(True)
+        # Equinox modules are immutable, so we return a new tree with the updated mask
+        return eqx.tree_at(lambda env: env.allowed_actions_mask, self, mask)
 
     @jax.jit
     def reset(self, key: jax.Array) -> Tuple[jnp.ndarray, EnvState]:
