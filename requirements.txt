@@ -1,0 +1,8 @@
+jax
+jaxlib
+equinox
+optax
+rlax
+numpy
+matplotlib
+pandas

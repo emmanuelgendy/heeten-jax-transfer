@@ -4,7 +4,6 @@ __pycache__/
 *.pyc
 
 # Data (Keep the folders, but ignore the heavy files inside)
-data/processed/*.npz
 *.csv
 *.dat
 
