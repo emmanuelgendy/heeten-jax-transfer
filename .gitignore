@@ -1,0 +1,12 @@
+# Python environment
+.venv/
+__pycache__/
+*.pyc
+
+# Data (Keep the folders, but ignore the heavy files inside)
+data/processed/*.npz
+*.csv
+*.dat
+
+# OS generated files
+.DS_Store
