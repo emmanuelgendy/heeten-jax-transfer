@@ -60,6 +60,14 @@ To verify the agent's performance on a specific hardware topology (e.g., HVAC on
 python train_zero_shot.py
 ```
 
-## 📊 Performance & Scaling
+## 📊 Performance, Scaling, and Zero-Shot Results
 
-By migrating from standard Python/Gymnasium to JAX, this framework achieves a ~50x speedup in simulation throughput, enabling the Leave-One-Out Cross-Validation (LOOCV) required for rigorous scientific benchmarking of RL in smart grids.
+By migrating from standard Python/Gymnasium to JAX, this framework achieves a **~50x speedup** in simulation throughput, enabling the Leave-One-Out Cross-Validation (LOOCV) required for rigorous scientific benchmarking of RL in smart grids.
+
+### Training Convergence
+![PPO Training Curve](training_curve.png)
+*Figure 1: Training performance of the AACL-PPO agent over 10 million environment steps. The learning curve demonstrates the agent successfully mastering the thermodynamic balance and dynamic pricing optimization of the Heeten dataset.*
+
+### Zero-Shot Actuator Masking
+![Zero-Shot Comparison](zero_shot_comparison.png)
+*Figure 2: Zero-Shot Transfer Evaluation. This plot compares the agent's thermal stability and economic performance under Full Control (Battery + HVAC) versus scenarios where specific actuators are dynamically disabled (HVAC-Only or Battery-Only). It demonstrates the agent's ability to maintain safety bounds without any retraining.*
