@@ -34,14 +34,26 @@ def build_heeten_tensor(csv_paths, weather_csv_path, pricing_csv_path, output_pa
     load_stacked = np.stack([df.loc[common_index, 'load'].values for df in building_dfs])
 
     # Process 1D Exogenous Data (Weather & Prices)
+    # Process Exogenous Data: Weather
     weather_df = pd.read_csv(weather_csv_path, parse_dates=['timestamp']).set_index('timestamp')
     weather_df = weather_df.resample(freq).mean().interpolate()
     outdoor_temp = weather_df.loc[common_index, 'temperature_c'].values
 
-    price_df = pd.read_csv(pricing_csv_path, parse_dates=['timestamp']).set_index('timestamp')
-    price_df = price_df.resample(freq).ffill()
-    import_price = price_df.loc[common_index, 'import_price_eur_kwh'].values
-    export_price = price_df.loc[common_index, 'export_price_eur_kwh'].values
+    # Process Exogenous Data: Real Day-Ahead Prices (2018-2020)
+    price_df = pd.read_csv(pricing_csv_path)
+    price_df['timestamp'] = pd.to_datetime(price_df['unixtime'], unit='s')
+    price_df = price_df.set_index('timestamp')
+    
+    # Resample to match our 1-hour frequency
+    price_df = price_df.resample(freq).mean().ffill()
+    
+    # Extract Netherlands wholesale prices (Convert from EUR/MWh to EUR/kWh)
+    wholesale_price_kwh = price_df.loc[common_index, 'netherlands'].values / 1000.0
+    
+    # Define Retail Import (Wholesale + 0.15 EUR Grid Fee/Tax) and Export (Wholesale only)
+    import_price = (wholesale_price_kwh + 0.15).astype(np.float32)
+    export_price = wholesale_price_kwh.astype(np.float32)
+    # -----------------------------
 
     # Export to NPZ
     np.savez_compressed(
@@ -62,4 +74,4 @@ if __name__ == "__main__":
         "data/raw/heeten_building_df60.csv",
         "data/raw/heeten_building_df69.csv",
     ]
-    build_heeten_tensor(csv_files, "data/raw/weather.csv", "data/raw/prices.csv")
+    build_heeten_tensor(csv_files, "data/raw/weather.csv", "data/raw/ee_day_ahead_prices_2018_till_2020.csv")

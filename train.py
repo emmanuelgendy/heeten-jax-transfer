@@ -10,7 +10,7 @@ from envs.jax_complex_hems import JAXComplexHemsEnv
 # --- HYPERPARAMETERS ---
 NUM_ENVS = 2048
 ROLLOUT_STEPS = 24       # One full day
-TOTAL_TIMESTEPS = 20_000_000
+TOTAL_TIMESTEPS = 50_000_000
 LR = 3e-4
 GAMMA = 0.99
 GAE_LAMBDA = 0.95
@@ -25,7 +25,7 @@ def main():
     vmap_step = jax.vmap(env.step, in_axes=(0, 0))
 
     # AACL Hardware Masking
-    allowed_actions = [0, 4, 8] # Discharge, Idle, Charge
+    allowed_actions = list(range(9)) # [0, 1, 2, 3, 4, 5, 6, 7, 8]
     env = env.set_hardware_topology(allowed_actions)
 
     # Initialize Agent & Optimizer

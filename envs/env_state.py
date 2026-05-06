@@ -10,7 +10,7 @@ class ComplexHemsConfig(eqx.Module):
     
     # Reward Weights
     cost_weight: float = 1.0
-    comfort_weight: float = 0.1
+    comfort_weight: float = 5.0
     
     # Comfort Setpoints
     temp_setpoint_low: float = 20.0

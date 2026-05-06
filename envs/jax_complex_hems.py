@@ -34,7 +34,7 @@ class JAXComplexHemsEnv(eqx.Module):
         self.export_price_data = jnp.array(data['export_price_data'])
         
         # Build the 9-Discrete Action Grid
-        batt_actions = [self.config.max_batt_discharge_kw, 0.0, self.config.max_batt_charge_kw]
+        batt_actions = [-self.config.max_batt_discharge_kw, 0.0, self.config.max_batt_charge_kw]
         hvac_actions = [self.config.hvac_max_cool_power, 0.0, self.config.hvac_max_heat_power]
         
         batt_grid, hvac_grid = jnp.meshgrid(jnp.array(batt_actions), jnp.array(hvac_actions))
@@ -125,10 +125,13 @@ class JAXComplexHemsEnv(eqx.Module):
         base_cost = (jnp.maximum(0.0, -base_net) * price_in) - (jnp.maximum(0.0, base_net) * price_out)
         
         # 6. Reward Calculation
-        comfort_penalty = jnp.maximum(0.0, next_temp - cfg.temp_setpoint_high) + jnp.maximum(0.0, cfg.temp_setpoint_low - next_temp)
+        # Square the penalty so that being off by 5 degrees is much worse than 5 * being off by 1 degree.
+        comfort_penalty = jnp.maximum(0.0, next_temp - cfg.temp_setpoint_high)**2 + jnp.maximum(0.0, cfg.temp_setpoint_low - next_temp)**2
         
         cost_reward = (base_cost - action_cost) * cfg.cost_weight
-        comfort_reward = -comfort_penalty * cfg.comfort_weight
+        # We also need to scale the comfort weight back down since we are squaring the penalty
+        comfort_reward = -comfort_penalty * (cfg.comfort_weight / 2.0) 
+        
         reward = cost_reward + comfort_reward
         
         # 7. State Progression
